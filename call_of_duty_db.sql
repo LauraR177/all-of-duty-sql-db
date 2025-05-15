@@ -468,3 +468,80 @@ FROM Team t
 JOIN Player_Team pt ON t.Team_ID = pt.Team_ID
 GROUP BY t.Team_Name;
 
+--Funciones 
+
+USE CallOfDutyDB;
+
+-- Función 1:Retorna el nivel promedio de todos los jugadores
+DELIMITER //
+CREATE FUNCTION GetAverageLevel()
+RETURNS DECIMAL(5,2)
+DETERMINISTIC
+BEGIN
+  DECLARE avg_level DECIMAL(5,2);
+  SELECT AVG(Level) INTO avg_level FROM Player;
+  RETURN avg_level;
+END //
+DELIMITER ;
+
+SELECT GetAverageLevel() AS avg_level;
+
+
+-- Función 2: Devuelve el nombre del equipo de un jugador 
+DELIMITER //
+CREATE FUNCTION GetPlayerTeam(playerId INT)
+RETURNS VARCHAR(100)
+DETERMINISTIC
+BEGIN
+  DECLARE teamName VARCHAR(100);
+  SELECT Team_Name INTO teamName
+  FROM Team
+  WHERE Team_ID = (SELECT Team_ID FROM Player_Team WHERE Player_ID = playerId LIMIT 1);
+  RETURN teamName;
+END //
+DELIMITER ;
+
+SELECT GetPlayerTeam(10) AS teamName;
+
+--Procedimientos
+
+USE CallOfDutyDB;
+
+-- Procedimiento1: Ordenar tabla Player por cualquier campo y ordenamiento
+-- Uso: CALL SortPlayers('Name', 'ASC');
+
+DELIMITER //
+CREATE PROCEDURE SortPlayers(
+  IN sortField VARCHAR(100),
+  IN sortOrder VARCHAR(4)
+)
+BEGIN
+  SET @query = CONCAT('SELECT * FROM Player ORDER BY ', sortField, ' ', sortOrder);
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END //
+DELIMITER ;
+
+CALL SortPlayers('Name', 'DESC');
+
+
+-- Procedimiento 2: Insertar un nuevo jugador en la tabla Player
+
+DELIMITER //
+CREATE PROCEDURE AddPlayer(
+  IN pname VARCHAR(100),
+  IN plevel INT,
+  IN pexp INT,
+  IN pkdr FLOAT,
+  IN pregdate DATE
+)
+BEGIN
+  INSERT INTO Player (Name, Level, Experience, KD_Ratio, Registration_Date)
+  VALUES (pname, plevel, pexp, pkdr, pregdate);
+END //
+DELIMITER ;
+
+CALL AddPlayer('Laura RR',50,469,1.4,'2025-04-15');
+
+SELECT * FROM Player;
